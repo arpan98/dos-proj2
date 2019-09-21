@@ -16,8 +16,10 @@ defmodule Proj2 do
   def main(args) do
     try do
       [numNodes, topology, algorithm] = args |> parse_input
-      Topology.create_topology(numNodes, topology)
+      {:ok, statsPID} = GenServer.start_link(Stats, [numNodes])
+      Topology.create_topology(numNodes, topology, statsPID)
       {_, pid, _, _} = Supervisor.which_children(GossipSupervisor) |> Enum.random
+      GenServer.call(statsPID, :startTimer)
       GenServer.cast(pid, {:gossip, "psst"})
       loop()
     rescue
