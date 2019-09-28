@@ -18,12 +18,24 @@ defmodule Topology do
 
     nodes = Enum.zip(nodes, 1..numNodes)
 
-    Enum.each(nodes, fn node ->
-      get_neighbors(nodes, node, topology)
-      |> get_pids_from_indices(nodes)
-      |> assign_neighbors(node)
-      |> send_neighbors()
-    end)
+    case topology do
+      "rand2D" -> 
+        plist = generate_random_points(numNodes)
+        IO.inspect(plist)
+        Enum.each(nodes, fn node ->
+          get_neighbors(nodes, node, topology, plist)
+          |> get_pids_from_indices(nodes)
+          |> assign_neighbors(node)
+          |> send_neighbors()
+        end)
+      _ ->
+        Enum.each(nodes, fn node ->
+          get_neighbors(nodes, node, topology)
+          |> get_pids_from_indices(nodes)
+          |> assign_neighbors(node)
+          |> send_neighbors()
+        end)
+    end
   end
 
   defp send_neighbors({cur_node, neighbors}) do
@@ -71,6 +83,20 @@ defmodule Topology do
     [rand_neighbor | neighbors]
   end
 
+  defp get_neighbors(_nodes, cur_node, topology, plist) when topology == "rand2D" do
+    {_, nodeIndex} = cur_node
+    {x0, y0} = Enum.at(plist, nodeIndex - 1)
+    Enum.with_index(plist, 1)
+    |> Enum.map(fn {point, index} ->
+      if index != nodeIndex do
+        {x, y} = point
+        if calculate_distance(x0, y0, x, y) <= 0.1 do
+          index
+        end
+      end
+    end)
+  end
+
   defp get_honeycomb_neighbors(numNodes, nodeIndex) do
     n = :math.sqrt(numNodes) |> trunc()
     cond do
@@ -104,18 +130,49 @@ defmodule Topology do
           Integer.is_even(nodeIndex) -> [nodeIndex + 1, nodeIndex - n]  
         end
 
-      # First and last column
-      rem(nodeIndex, 2*n) in [1, n] -> [nodeIndex - n, nodeIndex + n]
+      # First column
+      rem(nodeIndex, 2*n) == 1 -> [nodeIndex - n, nodeIndex + n]
+
+      # Last column
+      rem(nodeIndex, 2*n) == n ->
+        cond do
+          Integer.is_odd(n) -> [nodeIndex - 1, nodeIndex - n, nodeIndex + n]
+          Integer.is_even(n) -> [nodeIndex - n, nodeIndex + n]
+        end
+
+      rem(nodeIndex, 2*n) == 0 ->
+        cond do
+          Integer.is_odd(n) -> [nodeIndex - n, nodeIndex + n]
+          Integer.is_even(n) -> [nodeIndex - 1, nodeIndex - n, nodeIndex + n]
+        end
 
       # All internal nodes
-      Integer.is_odd(nodeIndex) -> [nodeIndex + 1, nodeIndex - n, nodeIndex + n]
-
-      Integer.is_even(nodeIndex) -> [nodeIndex - 1, nodeIndex - n, nodeIndex + n]
+      Integer.is_odd(nodeIndex) ->
+        cond do
+          Integer.is_odd(n) -> [nodeIndex - 1, nodeIndex - n, nodeIndex + n]
+          Integer.is_even(n) -> [nodeIndex + 1, nodeIndex - n, nodeIndex + n]
+        end
+        
+      Integer.is_even(nodeIndex) ->
+        cond do
+          Integer.is_odd(n) -> [nodeIndex + 1, nodeIndex - n, nodeIndex + n]
+          Integer.is_even(n) -> [nodeIndex - 1, nodeIndex - n, nodeIndex + n]
+        end
     end
+  end
+
+  defp generate_random_points(numNodes) do
+    Enum.map(1..numNodes, fn _ ->
+      {:rand.uniform() |> Float.ceil(3), :rand.uniform() |> Float.ceil(3)}
+    end)
   end
 
   defp get_pids_from_indices(neighbors, nodes) do
     Enum.filter(nodes, fn ({_, index}) -> Enum.member?(neighbors, index) end)
+  end
+
+  defp calculate_distance(x0, y0, x1, y1) do
+    :math.pow(x1-x0, 2) + :math.pow(y1-y0, 2) |> :math.sqrt()
   end
 
 end
