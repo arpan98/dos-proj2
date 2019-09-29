@@ -1,9 +1,9 @@
 defmodule Topology do
   require Integer
 
-  def create_topology(numNodes, topology, statsPID, module, failure_prob) do
-    IO.puts("Topology #{topology} with #{numNodes} nodes and failure_prob = #{failure_prob}")
-    nodes = 1..numNodes
+  def create_topology(num_of_nodes, topology, statsPID, module, failure_prob) do
+    IO.puts("Topology #{topology} with #{num_of_nodes} nodes and failure_prob = #{failure_prob}")
+    nodes = 1..num_of_nodes
     children = nodes
     |> Enum.map(fn i ->
       Supervisor.child_spec({module, [statsPID, i, failure_prob]}, id: {module, i})
@@ -15,13 +15,22 @@ defmodule Topology do
       pid
     end)
 
-    nodes = Enum.zip(nodes, 1..numNodes)
+    nodes = Enum.zip(nodes, 1..num_of_nodes)
 
     case topology do
       "rand2d" ->
-        plist = generate_random_points(numNodes)
+        plist = generate_random_points(num_of_nodes)
         Enum.each(nodes, fn node ->
           get_neighbors(nodes, node, topology, plist)
+          |> get_pids_from_indices(nodes)
+          |> assign_neighbors(node)
+          |> send_neighbors()
+        end)
+      "3dtorus" ->
+        neighbor_list = generate_3d_neighbors(num_of_nodes)
+        # IO.inspect neighbor_list
+        Enum.each(nodes, fn node ->
+          get_neighbors(nodes, node, topology, neighbor_list)
           |> get_pids_from_indices(nodes)
           |> assign_neighbors(node)
           |> send_neighbors()
@@ -54,25 +63,25 @@ defmodule Topology do
 
   defp get_neighbors(nodes, cur_node, topology) when topology == "line" do
     {_, nodeIndex} = cur_node
-    numNodes = Enum.count(nodes)
+    num_of_nodes = Enum.count(nodes)
     cond do
       nodeIndex == 1 -> [nodeIndex + 1]
-      nodeIndex == numNodes -> [nodeIndex - 1]
+      nodeIndex == num_of_nodes -> [nodeIndex - 1]
       true -> [nodeIndex - 1, nodeIndex + 1]
     end
   end
 
   defp get_neighbors(nodes, cur_node, topology) when topology == "honeycomb" do
     {_, nodeIndex} = cur_node
-    numNodes = Enum.count(nodes)
-    get_honeycomb_neighbors(numNodes, nodeIndex)
+    num_of_nodes = Enum.count(nodes)
+    get_honeycomb_neighbors(num_of_nodes, nodeIndex)
   end
 
   defp get_neighbors(nodes, cur_node, topology) when topology == "randhoneycomb" do
     {_, nodeIndex} = cur_node
     {_, nodeIndices} = Enum.unzip(nodes)
-    numNodes = Enum.count(nodes)
-    neighbors = get_honeycomb_neighbors(numNodes, nodeIndex)
+    num_of_nodes = Enum.count(nodes)
+    neighbors = get_honeycomb_neighbors(num_of_nodes, nodeIndex)
     rand_neighbor = nodeIndices
     |> Enum.reject(fn x -> x == nodeIndex end)  # Remove self node
     |> Enum.reject(fn x -> Enum.member?(neighbors, x) end)  # Remove already neighbor nodes
@@ -94,12 +103,17 @@ defmodule Topology do
     end)
   end
 
-  defp get_honeycomb_neighbors(numNodes, nodeIndex) do
-    n = :math.sqrt(numNodes) |> trunc()
+  defp get_neighbors(_nodes, cur_node, topology, neighbor_list) when topology == "3dtorus" do
+    {_, nodeIndex} = cur_node
+    Enum.at(neighbor_list, nodeIndex-1) |> Enum.at(1)
+  end
+
+  defp get_honeycomb_neighbors(num_of_nodes, nodeIndex) do
+    n = :math.sqrt(num_of_nodes) |> trunc()
     cond do
       # Corner nodes
       nodeIndex == 1 -> [nodeIndex + n]
-      nodeIndex == numNodes -> [nodeIndex - 1, nodeIndex - n]
+      nodeIndex == num_of_nodes -> [nodeIndex - 1, nodeIndex - n]
 
       nodeIndex == n ->
         cond do
@@ -107,7 +121,7 @@ defmodule Topology do
           Integer.is_even(n) -> [nodeIndex + n]
         end
 
-      nodeIndex == numNodes - n + 1 ->
+      nodeIndex == num_of_nodes - n + 1 ->
         cond do
           Integer.is_odd(n) -> [nodeIndex - n]
           Integer.is_even(n) -> [nodeIndex-n, nodeIndex + 1]
@@ -121,7 +135,7 @@ defmodule Topology do
         end
 
       # Last row
-      nodeIndex > numNodes - n ->
+      nodeIndex > num_of_nodes - n ->
         cond do
           Integer.is_odd(nodeIndex) -> [nodeIndex - 1, nodeIndex - n]
           Integer.is_even(nodeIndex) -> [nodeIndex + 1, nodeIndex - n]
@@ -158,10 +172,48 @@ defmodule Topology do
     end
   end
 
-  defp generate_random_points(numNodes) do
-    Enum.map(1..numNodes, fn _ ->
+  defp generate_random_points(num_of_nodes) do
+    Enum.map(1..num_of_nodes, fn _ ->
       {:rand.uniform() |> Float.ceil(3), :rand.uniform() |> Float.ceil(3)}
     end)
+  end
+
+  defp generate_3d_neighbors(num_of_nodes) do
+    n = trunc(:math.pow(num_of_nodes, 1/3))
+
+    arr = Enum.map(1..trunc(:math.pow(n, 3)), fn x -> x end)
+      |> Enum.chunk_every(n*n)
+      |> Enum.map(fn x -> Enum.chunk_every(x, n) end)
+    # IO.inspect arr
+
+    neighbor_list = Enum.map(1..trunc(:math.pow(n, 3))-1, fn x ->
+      {i, j, k} = {
+        trunc(x / (n*n)),
+        trunc( rem( x, n*n) / n),
+        rem(x, n) - 1
+      }
+      # IO.inspect {i, j , k}
+      neighbors = [
+        Enum.at(arr, i) |> Enum.at(j) |> Enum.at(rem(k - 1, n)),
+        Enum.at(arr, i) |> Enum.at(j) |> Enum.at(rem(k + 1, n)),
+        Enum.at(arr, i) |> Enum.at(rem(j - 1, n)) |> Enum.at(k),
+        Enum.at(arr, i) |> Enum.at(rem(j + 1, n)) |> Enum.at(k),
+        Enum.at(arr, rem(i - 1, n)) |> Enum.at(j) |> Enum.at(k),
+        Enum.at(arr, rem(i + 1, n)) |> Enum.at(j) |> Enum.at(k)
+      ]
+      # IO.inspect neighbors
+      [x, neighbors]
+    end)
+    neighbor_list = neighbor_list ++ [[trunc(:math.pow(n,3)), [
+      Enum.at(arr, n-1) |> Enum.at(n-1) |> Enum.at(rem(n-2,n)),
+      Enum.at(arr, n-1) |> Enum.at(n-1) |> Enum.at(rem(n,n)),
+      Enum.at(arr, n-1) |> Enum.at(rem(n-2,n)) |> Enum.at(n-1),
+      Enum.at(arr, n-1) |> Enum.at(rem(n,n)) |> Enum.at(n-1),
+      Enum.at(arr, rem(n-2,n)) |> Enum.at(n-1) |> Enum.at(n-1),
+      Enum.at(arr, rem(n,n)) |> Enum.at(n-1) |> Enum.at(n-1)
+    ]]]
+
+    neighbor_list
   end
 
   defp get_pids_from_indices(neighbors, nodes) do
@@ -171,5 +223,6 @@ defmodule Topology do
  defp calculate_distance(x0, y0, x1, y1) do
     :math.pow(x1-x0, 2) + :math.pow(y1-y0, 2) |> :math.sqrt()
   end
+
 
 end
