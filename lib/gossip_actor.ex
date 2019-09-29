@@ -2,7 +2,7 @@ defmodule Gossip.Actor do
   use GenServer
 
   @rumorlimit 10
-  @ticktime 100
+  @ticktime 10
 
   # Client
   def start_link(arg) do
@@ -10,20 +10,19 @@ defmodule Gossip.Actor do
   end
 
   def send_gossip(neighbors) do
-    neighbors |> Enum.random() |> GenServer.cast({:gossip, "rumor not set"})
+    neighbors |> Enum.random() |> GenServer.cast({:gossip, "some rumor"})
   end
 
   # Server
-  def init([statsPID | _]) do
-    {:ok, %{rumorCount: 0, statsPID: statsPID}}
+  def init([statsPID, _, failure_prob]) do
+    {:ok, %{rumorCount: 0, statsPID: statsPID, failure_prob: failure_prob}}
   end
 
-  def handle_cast({:gossip, rumor}, state) do
+  def handle_cast({:gossip, _rumor}, state) do
     # IO.puts("Got rumor. Rumor count = #{state.rumorCount}")
     rumorCount = state.rumorCount + 1
     new_state = %{state | rumorCount: rumorCount}
-    if rumorCount == @rumorlimit do
-      IO.puts("#{inspect(self())} rumor count #{rumorCount}")
+    if rumorCount == 1 do
       GenServer.cast(state.statsPID, :terminate)
     end
     {:noreply, new_state}
@@ -37,12 +36,21 @@ defmodule Gossip.Actor do
 
   def handle_info(:tock, state) do
     tick()
-    send_gossip(state.neighbors)
+    if state.rumorCount > 0 and state.rumorCount <= @rumorlimit do
+      if can_send(state.failure_prob) do
+        send_gossip(state.neighbors)
+      end
+    end
     {:noreply, state}
   end
 
   def tick() do
     Process.send_after(self(), :tock, @ticktime)
+  end
+
+  defp can_send(p) do
+    roll = :rand.uniform()
+    if roll >= p, do: true, else: false
   end
 
 end

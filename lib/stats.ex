@@ -8,13 +8,13 @@ defmodule Stats do
 
   def printTimeDiff(state) do
     diff = System.convert_time_unit(state.endTime - state.startTime, :native, :millisecond)
-    IO.puts("#{diff}") 
+    IO.puts("#{diff} ms. Time step = 10 ms") 
   end
 
   # Server
   def init(arg) do
-    [numNodes] = arg
-    {:ok, %{startTime: 0, endTime: 0, nodes_running: numNodes}}
+    [numNodes, mainPID] = arg
+    {:ok, %{mainPID: mainPID, startTime: 0, endTime: 0, nodes_running: numNodes}}
   end
 
   def handle_call(:startTimer, _from, state) do
@@ -33,9 +33,11 @@ defmodule Stats do
 
   def handle_cast(:terminate, state) do
     nodes_left = state.nodes_running - 1
+    IO.puts("Nodes left = #{nodes_left}")
     if nodes_left == 0 do
       new_state = %{state | endTime: System.monotonic_time(), nodes_running: nodes_left}
       printTimeDiff(new_state)
+      send(state.mainPID, :end)
       {:noreply, new_state}
     else
       new_state = %{state | nodes_running: nodes_left}

@@ -5,7 +5,7 @@ defmodule PushSum.Actor do
     GenServer.start_link(__MODULE__, argv)
   end
 
-  def init([statsPID, i]) do
+  def init([statsPID, i, _]) do
     {:ok, %{id: i, neighbors: [], sum: i, weight: 1, ratio: i/1, round: 0, statsPID: statsPID}}
   end
 
@@ -20,10 +20,10 @@ defmodule PushSum.Actor do
   end
 
   def handle_cast({:push_sum, s, w}, state) do
-    {sum, weight, round} = {state[:sum] + s/2, state[:weight] + w/2, state[:round] + 1}
-    ratio = sum/weight
+    {sum, weight, round} = {state[:sum] + s, state[:weight] + w, state[:round] + 1}
+    ratio = sum / weight
     IO.puts ~s"\n#{inspect(self())} with #{inspect({state[:sum], state[:weight], state[:ratio], state[:round]})} received #{inspect({s, w})}"
-    new_state = Map.put(state, :sum, sum) |> Map.put(:weight, weight) |> Map.put(:ratio, ratio)
+    new_state = %{state | sum: sum/2, weight: weight/2, ratio: ratio}
     neighbors = new_state[:neighbors] |> Enum.filter(fn x -> Process.alive?(x) end)
     new_state = cond do
       # neighbors == [] ->
@@ -38,7 +38,7 @@ defmodule PushSum.Actor do
         neighbors |> Enum.random() |> GenServer.cast({:push_sum, sum/2, weight/2})
         Map.put(new_state, :round, round)
       abs(state[:ratio] - ratio) <= :math.pow(10, -10) and round >= 3 ->
-        # neighbors |> Enum.random() |> GenServer.cast({:push_sum, sum/2, weight/2})
+        neighbors |> Enum.random() |> GenServer.cast({:push_sum, sum/2, weight/2})
         IO.puts ~s"Terminating #{inspect(self())} since values never converge"
         GenServer.cast(state.statsPID, :terminate)
         # Process.exit(self(), :kill)

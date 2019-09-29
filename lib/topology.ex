@@ -1,12 +1,12 @@
 defmodule Topology do
   require Integer
 
-  def create_topology(numNodes, topology, statsPID, module) do
-    IO.puts("Topology #{topology} with #{numNodes} nodes")
+  def create_topology(numNodes, topology, statsPID, module, failure_prob) do
+    IO.puts("Topology #{topology} with #{numNodes} nodes and failure_prob = #{failure_prob}")
     nodes = 1..numNodes
     children = nodes
     |> Enum.map(fn i ->
-      Supervisor.child_spec({module, [statsPID, i]}, id: {module, i})
+      Supervisor.child_spec({module, [statsPID, i, failure_prob]}, id: {module, i})
     end)
     Supervisor.start_link(children, strategy: :one_for_one, name: NodeSupervisor)
 
@@ -18,9 +18,8 @@ defmodule Topology do
     nodes = Enum.zip(nodes, 1..numNodes)
 
     case topology do
-      "rand2D" ->
+      "rand2d" ->
         plist = generate_random_points(numNodes)
-        IO.inspect(plist)
         Enum.each(nodes, fn node ->
           get_neighbors(nodes, node, topology, plist)
           |> get_pids_from_indices(nodes)
@@ -39,7 +38,6 @@ defmodule Topology do
 
   defp send_neighbors({cur_node, neighbors}) do
     {neighbors, _} = Enum.unzip(neighbors)
-    IO.inspect(neighbors)
     GenServer.cast(cur_node, {:neighbors, neighbors})
   end
 
@@ -82,7 +80,7 @@ defmodule Topology do
     [rand_neighbor | neighbors]
   end
 
-  defp get_neighbors(_nodes, cur_node, topology, plist) when topology == "rand2D" do
+  defp get_neighbors(_nodes, cur_node, topology, plist) when topology == "rand2d" do
     {_, nodeIndex} = cur_node
     {x0, y0} = Enum.at(plist, nodeIndex - 1)
     Enum.with_index(plist, 1)
