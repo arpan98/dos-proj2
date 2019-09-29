@@ -39,7 +39,7 @@ defmodule Proj2 do
     case topology do
       t when t in ["full", "line", "rand2d"] -> num_of_nodes
 
-      "3dtorus" -> num_of_nodes |> :math.pow(1/3) |> trunc() |> :math.pow(3) |> trunc()
+      "3dtorus" -> num_of_nodes |> :math.pow(1/3) |> ceil() |> :math.pow(3) |> trunc()
 
       t when t in ["honeycomb", "randhoneycomb"] ->
         num_of_nodes |> :math.sqrt() |> ceil() |> :math.pow(2) |> trunc()

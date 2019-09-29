@@ -44,7 +44,7 @@ defmodule Gossip.Actor do
     {:noreply, state}
   end
 
-  def tick() do
+  defp tick() do
     Process.send_after(self(), :tock, @ticktime)
   end
 

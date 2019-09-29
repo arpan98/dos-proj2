@@ -27,10 +27,10 @@ defmodule Topology do
           |> send_neighbors()
         end)
       "3dtorus" ->
-        neighbor_list = generate_3d_neighbors(num_of_nodes)
-        # IO.inspect neighbor_list
+        # neighbor_list = generate_3d_neighbors(num_of_nodes)
+        arr_3d = get_3d_arr(num_of_nodes)
         Enum.each(nodes, fn node ->
-          get_neighbors(nodes, node, topology, neighbor_list)
+          get_neighbors(nodes, node, topology, arr_3d)
           |> get_pids_from_indices(nodes)
           |> assign_neighbors(node)
           |> send_neighbors()
@@ -50,7 +50,7 @@ defmodule Topology do
     GenServer.cast(cur_node, {:neighbors, neighbors})
   end
 
-  def assign_neighbors(nodes, cur_node) do
+  defp assign_neighbors(nodes, cur_node) do
     {cur_pid, _} = cur_node
     {cur_pid, nodes}
   end
@@ -58,12 +58,14 @@ defmodule Topology do
   defp get_neighbors(nodes, cur_node, topology) when topology == "full" do
     {_, nodeIndex} = cur_node
     {_, nodeIndices} = Enum.unzip(nodes)
+    # IO.puts("neighbors node #{nodeIndex}")
     nodeIndices |> Enum.reject(fn x -> x == nodeIndex end)
   end
 
   defp get_neighbors(nodes, cur_node, topology) when topology == "line" do
     {_, nodeIndex} = cur_node
     num_of_nodes = Enum.count(nodes)
+    # IO.puts("neighbors node #{nodeIndex} / #{num_of_nodes}")
     cond do
       nodeIndex == 1 -> [nodeIndex + 1]
       nodeIndex == num_of_nodes -> [nodeIndex - 1]
@@ -74,6 +76,7 @@ defmodule Topology do
   defp get_neighbors(nodes, cur_node, topology) when topology == "honeycomb" do
     {_, nodeIndex} = cur_node
     num_of_nodes = Enum.count(nodes)
+    # IO.puts("neighbors node #{nodeIndex} / #{num_of_nodes}")
     get_honeycomb_neighbors(num_of_nodes, nodeIndex)
   end
 
@@ -81,6 +84,7 @@ defmodule Topology do
     {_, nodeIndex} = cur_node
     {_, nodeIndices} = Enum.unzip(nodes)
     num_of_nodes = Enum.count(nodes)
+    # IO.puts("neighbors node #{nodeIndex} / #{num_of_nodes}")
     neighbors = get_honeycomb_neighbors(num_of_nodes, nodeIndex)
     rand_neighbor = nodeIndices
     |> Enum.reject(fn x -> x == nodeIndex end)  # Remove self node
@@ -91,6 +95,7 @@ defmodule Topology do
 
   defp get_neighbors(_nodes, cur_node, topology, plist) when topology == "rand2d" do
     {_, nodeIndex} = cur_node
+    # IO.puts("neighbors node #{nodeIndex}")
     {x0, y0} = Enum.at(plist, nodeIndex - 1)
     Enum.with_index(plist, 1)
     |> Enum.map(fn {point, index} ->
@@ -103,9 +108,36 @@ defmodule Topology do
     end)
   end
 
-  defp get_neighbors(_nodes, cur_node, topology, neighbor_list) when topology == "3dtorus" do
+  defp get_neighbors(nodes, cur_node, topology, arr) when topology == "3dtorus" do
     {_, nodeIndex} = cur_node
-    Enum.at(neighbor_list, nodeIndex-1) |> Enum.at(1)
+    num_of_nodes = Enum.count(nodes)
+    # IO.puts("neighbors node #{nodeIndex} / #{num_of_nodes}")
+    n = ceil(:math.pow(num_of_nodes, 1/3))
+    {i, j, k} = {
+      div(nodeIndex, (n*n)),
+      div(rem(nodeIndex, n*n), n),
+      rem(nodeIndex, n) - 1
+    }
+    cond do
+      nodeIndex == num_of_nodes ->
+        [
+          Enum.at(arr, n-1) |> Enum.at(n-1) |> Enum.at(rem(n-2,n)),
+          Enum.at(arr, n-1) |> Enum.at(n-1) |> Enum.at(rem(n,n)),
+          Enum.at(arr, n-1) |> Enum.at(rem(n-2,n)) |> Enum.at(n-1),
+          Enum.at(arr, n-1) |> Enum.at(rem(n,n)) |> Enum.at(n-1),
+          Enum.at(arr, rem(n-2,n)) |> Enum.at(n-1) |> Enum.at(n-1),
+          Enum.at(arr, rem(n,n)) |> Enum.at(n-1) |> Enum.at(n-1)
+        ]
+      true ->
+        [
+          Enum.at(arr, i) |> Enum.at(j) |> Enum.at(rem(k - 1, n)),
+          Enum.at(arr, i) |> Enum.at(j) |> Enum.at(rem(k + 1, n)),
+          Enum.at(arr, i) |> Enum.at(rem(j - 1, n)) |> Enum.at(k),
+          Enum.at(arr, i) |> Enum.at(rem(j + 1, n)) |> Enum.at(k),
+          Enum.at(arr, rem(i - 1, n)) |> Enum.at(j) |> Enum.at(k),
+          Enum.at(arr, rem(i + 1, n)) |> Enum.at(j) |> Enum.at(k)
+        ]
+    end
   end
 
   defp get_honeycomb_neighbors(num_of_nodes, nodeIndex) do
@@ -178,42 +210,12 @@ defmodule Topology do
     end)
   end
 
-  defp generate_3d_neighbors(num_of_nodes) do
-    n = trunc(:math.pow(num_of_nodes, 1/3))
+  defp get_3d_arr(num_of_nodes) do
+    n = ceil(:math.pow(num_of_nodes, 1/3))
 
-    arr = Enum.map(1..trunc(:math.pow(n, 3)), fn x -> x end)
+    arr = Enum.map(1..num_of_nodes, fn x -> x end)
       |> Enum.chunk_every(n*n)
       |> Enum.map(fn x -> Enum.chunk_every(x, n) end)
-    # IO.inspect arr
-
-    neighbor_list = Enum.map(1..trunc(:math.pow(n, 3))-1, fn x ->
-      {i, j, k} = {
-        trunc(x / (n*n)),
-        trunc( rem( x, n*n) / n),
-        rem(x, n) - 1
-      }
-      # IO.inspect {i, j , k}
-      neighbors = [
-        Enum.at(arr, i) |> Enum.at(j) |> Enum.at(rem(k - 1, n)),
-        Enum.at(arr, i) |> Enum.at(j) |> Enum.at(rem(k + 1, n)),
-        Enum.at(arr, i) |> Enum.at(rem(j - 1, n)) |> Enum.at(k),
-        Enum.at(arr, i) |> Enum.at(rem(j + 1, n)) |> Enum.at(k),
-        Enum.at(arr, rem(i - 1, n)) |> Enum.at(j) |> Enum.at(k),
-        Enum.at(arr, rem(i + 1, n)) |> Enum.at(j) |> Enum.at(k)
-      ]
-      # IO.inspect neighbors
-      [x, neighbors]
-    end)
-    neighbor_list = neighbor_list ++ [[trunc(:math.pow(n,3)), [
-      Enum.at(arr, n-1) |> Enum.at(n-1) |> Enum.at(rem(n-2,n)),
-      Enum.at(arr, n-1) |> Enum.at(n-1) |> Enum.at(rem(n,n)),
-      Enum.at(arr, n-1) |> Enum.at(rem(n-2,n)) |> Enum.at(n-1),
-      Enum.at(arr, n-1) |> Enum.at(rem(n,n)) |> Enum.at(n-1),
-      Enum.at(arr, rem(n-2,n)) |> Enum.at(n-1) |> Enum.at(n-1),
-      Enum.at(arr, rem(n,n)) |> Enum.at(n-1) |> Enum.at(n-1)
-    ]]]
-
-    neighbor_list
   end
 
   defp get_pids_from_indices(neighbors, nodes) do
@@ -223,6 +225,5 @@ defmodule Topology do
  defp calculate_distance(x0, y0, x1, y1) do
     :math.pow(x1-x0, 2) + :math.pow(y1-y0, 2) |> :math.sqrt()
   end
-
 
 end
