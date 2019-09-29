@@ -1,36 +1,33 @@
 defmodule Proj2 do
-  @moduledoc """
-  Documentation for Gossip.
-  """
 
-  @doc """
-  Hello world.
-
-  ## Examples
-
-      iex> Gossip.hello()
-      :world
-
-  """
-
-  def main(args) do
-    # try do
-      [numNodes, topology, algorithm] = args |> parse_input
-      numNodes = round_up(numNodes, topology)
-      {:ok, statsPID} = GenServer.start_link(Stats, [numNodes])
-      Topology.create_topology(numNodes, topology, statsPID)
-      {_, pid, _, _} = Supervisor.which_children(GossipSupervisor) |> Enum.random
-      GenServer.call(statsPID, :startTimer)
-      GenServer.cast(pid, {:gossip, "psst"})
-      loop()
-    # rescue
-    #   FunctionClauseError -> IO.puts("3 arguments expected - numNodes(int) topology algorithm")
-    #   ArgumentError -> IO.puts("3 arguments expected - numNodes(int) topology algorithm")
-    # end
+  def main(argv) do
+    argv
+    |> parse_input
+    |> run
   end
 
-  def parse_input([numNodes, topology, algorithm]) do
-    [String.to_integer(numNodes), topology, algorithm]
+  defp parse_input([num_of_nodes, topology, algorithm]) do
+    [String.to_integer(num_of_nodes), String.downcase(topology), String.downcase(algorithm)]
+  end
+
+  defp run([num_of_nodes, topology, algorithm]) when algorithm == "gossip" do
+    num_of_nodes = round_up(num_of_nodes, topology)
+    {:ok, statsPID} = GenServer.start_link(Stats, [num_of_nodes])
+    Topology.create_topology(num_of_nodes, topology, statsPID, Gossip.Actor)
+    {_, pid, _, _} = Supervisor.which_children(NodeSupervisor) |> Enum.random
+    GenServer.call(statsPID, :startTimer)
+    GenServer.cast(pid, {:gossip, "psst"})
+    loop()
+  end
+
+  defp run([num_of_nodes, topology, algorithm]) when algorithm == "push-sum" do
+    num_of_nodes = round_up(num_of_nodes, topology)
+    {:ok, statsPID} = GenServer.start_link(Stats, [num_of_nodes])
+    Topology.create_topology(num_of_nodes, topology, statsPID, PushSum.Actor)
+    {_, pid, _, _} = Supervisor.which_children(NodeSupervisor) |> Enum.random
+    GenServer.call(statsPID, :startTimer)
+    GenServer.cast(pid, {:push_sum, 0, 0})
+    loop()
   end
 
   defp round_up(numNodes, topology) do
@@ -39,8 +36,8 @@ defmodule Proj2 do
 
       "3Dtorus" ->
         numNodes |> :math.sqrt() |> ceil() |> :math.pow(3) |> trunc()
-      
-      t when t in ["honeycomb", "randhoneycomb"] -> 
+
+      t when t in ["honeycomb", "randhoneycomb"] ->
         numNodes |> :math.sqrt() |> ceil() |> :math.pow(2) |> trunc()
     end
   end

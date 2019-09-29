@@ -14,8 +14,7 @@ defmodule Gossip.Actor do
   end
 
   # Server
-  def init(arg) do
-    [statsPID] = arg
+  def init([statsPID | _]) do
     {:ok, %{rumorCount: 0, statsPID: statsPID}}
   end
 

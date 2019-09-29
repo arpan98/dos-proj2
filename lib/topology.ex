@@ -1,17 +1,16 @@
 defmodule Topology do
   require Integer
 
-  def create_topology(numNodes, topology, statsPID) do
+  def create_topology(numNodes, topology, statsPID, module) do
     IO.puts("Topology #{topology} with #{numNodes} nodes")
     nodes = 1..numNodes
-
     children = nodes
     |> Enum.map(fn i ->
-      Supervisor.child_spec({Gossip.Actor, [statsPID]}, id: {Gossip.Actor, i})
+      Supervisor.child_spec({module, [statsPID, i]}, id: {module, i})
     end)
-    Supervisor.start_link(children, strategy: :one_for_one, name: GossipSupervisor)
+    Supervisor.start_link(children, strategy: :one_for_one, name: NodeSupervisor)
 
-    nodes = Enum.map(Supervisor.which_children(GossipSupervisor), fn child ->
+    nodes = Enum.map(Supervisor.which_children(NodeSupervisor), fn child ->
       {_, pid, _, _} = child
       pid
     end)
@@ -94,14 +93,14 @@ defmodule Topology do
       nodeIndex < n ->
         cond do
           Integer.is_odd(nodeIndex) -> [nodeIndex - 1, nodeIndex + n]
-          Integer.is_even(nodeIndex) -> [nodeIndex + 1, nodeIndex + n]  
+          Integer.is_even(nodeIndex) -> [nodeIndex + 1, nodeIndex + n]
         end
 
       # Last row
       nodeIndex > numNodes - n ->
         cond do
           Integer.is_odd(nodeIndex) -> [nodeIndex - 1, nodeIndex - n]
-          Integer.is_even(nodeIndex) -> [nodeIndex + 1, nodeIndex - n]  
+          Integer.is_even(nodeIndex) -> [nodeIndex + 1, nodeIndex - n]
         end
 
       # First and last column
