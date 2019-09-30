@@ -51,7 +51,7 @@ defmodule Proj2 do
   def loop(node_time_list) do
     receive do
       {:node_time, [pid, time]} ->
-        IO.puts ~s"#{inspect(pid)} - #{inspect(time)}"
+        # IO.puts ~s"#{inspect(pid)} - #{inspect(time)}"
         node_time_list ++ [[pid, time]]
       :end ->
         IO.puts ~s"#{inspect(node_time_list)}"

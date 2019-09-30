@@ -18,6 +18,7 @@ defmodule Stats do
   end
 
   def handle_cast({:store_nodes, nodes}, state) do
+    IO.inspect nodes
     new_state = Map.put(state, :nodes, nodes)
     {:noreply, new_state}
   end
@@ -55,31 +56,31 @@ defmodule Stats do
   end
 
   def handle_cast({:terminate_process, pid}, state) do
-    Process.exit(pid, :kill)
-    diff = compute_time(state.startTime, pid)
-    state.main_pid |> send({:node_time, [pid, diff]})
-    new_state = %{state | nodes: state.nodes |> Enum.filter(fn x -> x != pid end)}
+    compute_time(state.main_pid, pid, state.startTime)
+    new_state = %{state | nodes: state.nodes |> Enum.reject(fn x -> x == pid end)}
     {:noreply, new_state}
   end
 
   def handle_cast(:terminate_all, state) do
     IO.puts ~s"Terminating all other processes waiting for a message ... ..."
-    state.nodes |> Enum.each(fn pid ->
-      Process.exit(pid, :kill)
-      diff = compute_time(state.startTime, pid)
-      state.main_pid |> send({:node_time, [pid, diff]})
+    IO.inspect state.nodes
+    nodes = state.nodes |> Enum.map(fn pid ->
+      compute_time(state.main_pid, pid, state.startTime)
     end)
-    new_state = %{state | nodes: []}
+    new_state = %{state | nodes: nodes}
     IO.puts ~s"Terminating main process ... ..."
     send(state.main_pid, :end)
     {:noreply, new_state}
   end
 
-  defp compute_time(start_time, pid) do
-    cur_time = System.monotonic_time()
-    diff = System.convert_time_unit(cur_time - start_time, :native, :millisecond)
-    IO.puts ~s"#{inspect(pid)} started at #{inspect(start_time)} and terminated at #{inspect(cur_time)}.\nTotal time taken to converge #{inspect(pid)} is #{inspect(diff)}."
-    diff
+  defp compute_time(main_pid, pid, start_time) do
+    if Process.alive?(pid) do
+      Process.exit(pid, :kill)
+      cur_time = System.monotonic_time()
+      diff = System.convert_time_unit(cur_time - start_time, :native, :millisecond)
+      IO.puts ~s"#{inspect(pid)} started at #{inspect(start_time)} and terminated at #{inspect(cur_time)}. Total time taken to converge #{inspect(pid)} is #{inspect(diff)}."
+      main_pid |> send({:node_time, [pid, diff]})
+    end
   end
 
 end
