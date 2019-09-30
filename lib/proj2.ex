@@ -20,6 +20,7 @@ defmodule Proj2 do
     {:ok, statsPID} = GenServer.start_link(Stats, [num_of_nodes, self()])
     Topology.create_topology(num_of_nodes, topology, statsPID, Gossip.Actor, failure_prob)
     {_, pid, _, _} = Supervisor.which_children(NodeSupervisor) |> Enum.random
+    IO.puts("Starting Gossip algorithm")
     GenServer.call(statsPID, :startTimer)
     GenServer.cast(pid, {:gossip, "psst"})
     loop()

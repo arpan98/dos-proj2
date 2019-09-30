@@ -2,7 +2,7 @@ defmodule Topology do
   require Integer
 
   def create_topology(num_of_nodes, topology, statsPID, module, failure_prob) do
-    IO.puts("Topology #{topology} with #{num_of_nodes} nodes and failure_prob = #{failure_prob}")
+    IO.puts("Creating topology #{topology} with #{num_of_nodes} nodes and failure_prob = #{failure_prob}")
     nodes = 1..num_of_nodes
     children = nodes
     |> Enum.map(fn i ->
