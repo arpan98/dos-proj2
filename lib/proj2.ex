@@ -23,17 +23,18 @@ defmodule Proj2 do
     IO.puts("Starting Gossip algorithm")
     GenServer.call(statsPID, :startTimer)
     GenServer.cast(pid, {:gossip, "psst"})
-    loop()
+    loop([])
   end
 
   defp run([num_of_nodes, topology, algorithm, failure_prob]) when algorithm == "push-sum" do
     num_of_nodes = round_up(num_of_nodes, topology)
     {:ok, statsPID} = GenServer.start_link(Stats, [num_of_nodes, self()])
     Topology.create_topology(num_of_nodes, topology, statsPID, PushSum.Actor, failure_prob)
-    {_, pid, _, _} = Supervisor.which_children(NodeSupervisor) |> Enum.random
+    nodes = Supervisor.which_children(NodeSupervisor) |> Enum.map(fn {_, pid, _, _} -> pid end)
+    GenServer.cast(statsPID, {:store_nodes, nodes})
     GenServer.call(statsPID, :startTimer)
-    GenServer.cast(pid, {:push_sum, 0, 0})
-    loop()
+    Enum.random(nodes) |> GenServer.cast({:push_sum, 0, 0})
+    loop([])
   end
 
   defp round_up(num_of_nodes, topology) do
@@ -47,9 +48,16 @@ defmodule Proj2 do
     end
   end
 
-  def loop() do
+  def loop(node_time_list) do
     receive do
-      :end -> exit(:shutdown)
+      {:node_time, [pid, time]} ->
+        IO.puts ~s"#{inspect(pid)} - #{inspect(time)}"
+        node_time_list ++ [[pid, time]]
+      :end ->
+        IO.puts ~s"#{inspect(node_time_list)}"
+        exit(:shutdown)
     end
+    |> loop()
   end
+
 end

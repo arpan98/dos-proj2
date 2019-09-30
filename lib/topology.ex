@@ -27,7 +27,6 @@ defmodule Topology do
           |> send_neighbors()
         end)
       "3dtorus" ->
-        # neighbor_list = generate_3d_neighbors(num_of_nodes)
         arr_3d = get_3d_arr(num_of_nodes)
         Enum.each(nodes, fn node ->
           get_neighbors(nodes, node, topology, arr_3d)
@@ -213,7 +212,7 @@ defmodule Topology do
   defp get_3d_arr(num_of_nodes) do
     n = ceil(:math.pow(num_of_nodes, 1/3))
 
-    arr = Enum.map(1..num_of_nodes, fn x -> x end)
+    Enum.map(1..num_of_nodes, fn x -> x end)
       |> Enum.chunk_every(n*n)
       |> Enum.map(fn x -> Enum.chunk_every(x, n) end)
   end
