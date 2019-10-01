@@ -17,7 +17,7 @@ defmodule Proj2 do
 
   defp run([num_of_nodes, topology, algorithm, failure_prob]) when algorithm == "gossip" do
     num_of_nodes = round_up(num_of_nodes, topology)
-    IO.puts ~s"Node Count: #{inspect(num_of_nodes)}, Topology: #{inspect(topology)}, Algorithm: #{inspect(algorithm)}, Failure Prob: #{inspect(failure_prob)}, Time step = 10 ms"
+    IO.puts ~s"\nNode Count: #{inspect(num_of_nodes)}, Topology: #{inspect(topology)}, Algorithm: #{inspect(algorithm)}, Failure Prob: #{inspect(failure_prob)}, Time step = 10 ms"
     {:ok, statsPID} = GenServer.start_link(Stats, [num_of_nodes, topology, self()])
     Topology.create_topology(num_of_nodes, topology, statsPID, Gossip.Actor, failure_prob)
     {_, pid, _, _} = Supervisor.which_children(NodeSupervisor) |> Enum.random
@@ -29,7 +29,7 @@ defmodule Proj2 do
 
   defp run([num_of_nodes, topology, algorithm, failure_prob]) when algorithm == "push-sum" do
     num_of_nodes = round_up(num_of_nodes, topology)
-    IO.puts ~s"Node Count: #{inspect(num_of_nodes)}, Topology: #{inspect(topology)}, Algorithm: #{inspect(algorithm)}, Failure Prob: #{inspect(failure_prob)}"
+    IO.puts ~s"\nNode Count: #{inspect(num_of_nodes)}, Topology: #{inspect(topology)}, Algorithm: #{inspect(algorithm)}, Failure Prob: #{inspect(failure_prob)}"
     {:ok, statsPID} = GenServer.start_link(Stats, [num_of_nodes, topology, self()])
     Topology.create_topology(num_of_nodes, topology, statsPID, PushSum.Actor, failure_prob)
     nodes = Supervisor.which_children(NodeSupervisor) |> Enum.map(fn {_, pid, _, _} -> pid end)

@@ -7,7 +7,6 @@ defmodule PushSum.Actor do
 
   def init([statsPID, i, failure_prob]) do
     {:ok, %{
-        id: i,
         neighbors: [],
         sum: i,
         weight: 1,
