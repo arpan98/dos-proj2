@@ -6,11 +6,10 @@ defmodule PushSum.Actor do
   end
 
   def init([statsPID, i, _]) do
-    {:ok, %{id: i, neighbors: [], sum: i, weight: 1, ratio: i/1, round: 0, statsPID: statsPID}}
+    {:ok, %{id: i, neighbors: [], sum: i, weight: 1, ratio: i/1, round: 0, statsPID: statsPID, running: true}}
   end
 
   def handle_call({:get_state}, _from, state) do
-    IO.inspect state
     {:reply, state, state}
   end
 
@@ -22,13 +21,10 @@ defmodule PushSum.Actor do
   def handle_cast({:push_sum, s, w}, state) do
     {sum, weight, round} = {state[:sum] + s, state[:weight] + w, state[:round] + 1}
     ratio = sum / weight
-    # IO.puts ~s"#{inspect(self())} with #{inspect({state[:sum], state[:weight], state[:ratio], state[:round]})} received #{inspect({s, w})}"
     new_state = %{state | sum: sum/2, weight: weight/2, ratio: ratio}
     neighbors = new_state[:neighbors] |> Enum.filter(fn x -> Process.alive?(x) end)
-    IO.puts ~s"#{inspect(self())} neighbors - #{inspect(neighbors)}"
     new_state = cond do
       neighbors == [] ->
-        IO.puts ~s"Terminating #{inspect(self())} - empty neighbour list"
         send_msg(state.statsPID, nil, sum, weight)
         new_state
       abs(state[:ratio] - ratio) > :math.pow(10, -10) ->
@@ -40,12 +36,10 @@ defmodule PushSum.Actor do
         send_msg(state.statsPID, next_pid, sum, weight)
         %{new_state | round: round, neighbors: neighbors}
       abs(state[:ratio] - ratio) <= :math.pow(10, -10) and round >= 3 ->
-        {neighbors, next_pid} = neighbors |> get_neighbor()
-        IO.puts ~s"\Terminating #{inspect(self())} - sum estimate converge"
         GenServer.call(state.statsPID, {:terminate_process, self()} )
+        {neighbors, next_pid} = neighbors |> get_neighbor()
         send_msg(state.statsPID, next_pid, sum, weight)
-        Process.exit(self(), :kill)
-        %{new_state | round: round, neighbors: neighbors}
+        %{new_state | round: round, neighbors: neighbors, running: false}
     end
     {:noreply, new_state}
   end
@@ -63,10 +57,10 @@ defmodule PushSum.Actor do
       neighbors == [] -> {[], nil}
       true ->
         next_pid = neighbors |> Enum.random()
-        case Process.alive?(next_pid) do
+        case GenServer.call(next_pid, {:get_state}).running do
           false -> neighbors |> Enum.filter(fn pid -> next_pid != pid end) |> get_neighbor()
           true -> {neighbors, next_pid}
-      end
+        end
     end
   end
 

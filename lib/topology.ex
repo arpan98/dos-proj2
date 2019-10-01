@@ -28,7 +28,6 @@ defmodule Topology do
         end)
       "3dtorus" ->
         arr_3d = get_3d_arr(num_of_nodes)
-        IO.inspect arr_3d
         Enum.each(nodes, fn node ->
           get_neighbors(nodes, node, topology, arr_3d)
           |> get_pids_from_indices(nodes)

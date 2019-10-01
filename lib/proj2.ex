@@ -51,10 +51,11 @@ defmodule Proj2 do
   def loop(node_time_list) do
     receive do
       {:node_time, [pid, time]} ->
-        # IO.puts ~s"#{inspect(pid)} - #{inspect(time)}"
         node_time_list ++ [[pid, time]]
-      :end ->
-        IO.puts ~s"#{inspect(node_time_list)}"
+      {:end, [start_time, end_time]} ->
+        IO.puts ~s"Start Time: #{inspect(div(start_time, 1000))} seconds."
+        IO.puts ~s"End Time: #{inspect(div(end_time, 1000))} seconds."
+        IO.puts ~s"Convergence Time: #{inspect(div(end_time - start_time, 1000))} seconds."
         exit(:shutdown)
     end
     |> loop()
