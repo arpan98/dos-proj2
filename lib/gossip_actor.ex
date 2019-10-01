@@ -27,7 +27,7 @@ defmodule Gossip.Actor do
       tick()
     end
     if rumorCount == 10 do
-      GenServer.cast(state.statsPID, :terminate)
+      GenServer.cast(state.statsPID, :terminateGossip)
     end
     {:noreply, new_state}
   end

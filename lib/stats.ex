@@ -8,13 +8,22 @@ defmodule Stats do
 
   def printTimeDiff(state) do
     diff = System.convert_time_unit(state.endTime - state.startTime, :native, :millisecond)
-    IO.puts("#{diff} ms. Time step = 100 ms")
+    IO.puts("Convergence time = #{diff} ms. Time step = 100 ms")
   end
 
   # Server
   def init(arg) do
-    [num_of_nodes, main_pid] = arg
-    {:ok, %{main_pid: main_pid, startTime: 0, endTime: 0, total_nodes: num_of_nodes, nodes_running: num_of_nodes}}
+    [num_of_nodes, topology, main_pid] = arg
+    terminating_percent = case topology do
+      "full" -> 80
+      "line" -> 70
+      "rand2d" -> 80
+      "3dtorus" -> 80
+      "honeycomb" -> 70
+      "randhoneycomb" -> 70
+      _ -> 70
+    end
+    {:ok, %{main_pid: main_pid, startTime: 0, endTime: 0, total_nodes: num_of_nodes, nodes_running: num_of_nodes, term_per: terminating_percent}}
   end
 
   def handle_cast({:store_nodes, nodes}, state) do
@@ -37,18 +46,16 @@ defmodule Stats do
     {:reply, state.endTime - state.startTime, state}
   end
 
-  def handle_cast(:terminate, state) do
-    cur_time = System.monotonic_time()
-    diff = System.convert_time_unit(cur_time - state.startTime, :native, :millisecond)
+  def handle_cast(:terminateGossip, state) do
     nodes_left = state.nodes_running - 1
     percentage = (state.total_nodes - nodes_left) * 100 / state.total_nodes
-    IO.puts("#{percentage} #{diff}")
-    # IO.puts("Nodes terminated = #{state.total_nodes - nodes_left} / #{state.total_nodes}")
-    if nodes_left == 0 do
-      new_state = %{state | endTime: System.monotonic_time(), nodes_running: nodes_left}
+    IO.inspect(percentage)
+    if percentage >= state.term_per do
+      cur_time = System.monotonic_time()
+      new_state = %{state | endTime: cur_time, nodes_running: nodes_left}
       printTimeDiff(new_state)
       send(state.main_pid, :end)
-      {:noreply, new_state}
+      {:noreply, new_state}      
     else
       new_state = %{state | nodes_running: nodes_left}
       {:noreply, new_state}
@@ -78,7 +85,7 @@ defmodule Stats do
       Process.exit(pid, :kill)
       cur_time = System.monotonic_time()
       diff = System.convert_time_unit(cur_time - start_time, :native, :millisecond)
-      IO.puts ~s"#{inspect(pid)} started at #{inspect(start_time)} and terminated at #{inspect(cur_time)}. Total time taken to converge #{inspect(pid)} is #{inspect(diff)}."
+      IO.puts ~s"Time taken to converge #{inspect(pid)} is #{inspect(diff)}."
       main_pid |> send({:node_time, [pid, diff]})
     end
   end
