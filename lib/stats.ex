@@ -12,19 +12,21 @@ defmodule Stats do
     terminating_percent = case topology do
       "full" -> 80
       "line" -> 60
-      "rand2d" -> 80
+      "rand2d" -> 70
       "3dtorus" -> 80
       "honeycomb" -> 70
       "randhoneycomb" -> 70
       _ -> 70
     end
-    {:ok, %{main_pid: main_pid, startTime: 0, endTime: 0, total_nodes: num_of_nodes, nodes_running: num_of_nodes, term_per: terminating_percent}}
-  end
-
-  def handle_cast({:store_nodes, nodes}, state) do
-    IO.inspect nodes
-    new_state = Map.put(state, :nodes, nodes)
-    {:noreply, new_state}
+    {:ok, %{
+      main_pid: main_pid,
+      startTime: 0,
+      endTime: 0,
+      total_nodes: num_of_nodes,
+      nodes_terminated: 0,
+      term_per: terminating_percent
+      }
+    }
   end
 
   def handle_call(:startTimer, _from, state) do
@@ -41,47 +43,33 @@ defmodule Stats do
     {:reply, state.endTime - state.startTime, state}
   end
 
-  def handle_cast(:terminateGossip, state) do
-    nodes_left = state.nodes_running - 1
-    percentage = (state.total_nodes - nodes_left) * 100 / state.total_nodes
+  def handle_call(:terminateGossip, _from, state) do
+    # {pid, _} = from
+    nodes_terminated = state.nodes_terminated + 1
+    percentage = nodes_terminated * 100 / state.total_nodes
+    # IO.puts("#{inspect(pid)} done. #{percentage}")
     if percentage >= state.term_per do
       cur_time = System.monotonic_time()
-      new_state = %{state | endTime: cur_time, nodes_running: nodes_left}
-      diff = System.convert_time_unit(cur_time - state.startTime, :native, :millisecond)
-      send(state.main_pid, {:end, diff})
-      {:noreply, new_state}      
+      new_state = %{state | endTime: cur_time, nodes_terminated: nodes_terminated}
+      send(state.main_pid, {:end, [state.startTime, cur_time], {:normal, percentage}})
+      {:reply, new_state, new_state}      
     else
-      new_state = %{state | nodes_running: nodes_left}
-      {:noreply, new_state}
+      new_state = %{state | nodes_terminated: nodes_terminated}
+      {:reply, new_state, new_state}
     end
   end
 
-  def handle_call({:terminate_process, pid}, _from, state) do
-    compute_time(state.main_pid, pid, state.startTime)
-    new_state = %{state | nodes: state.nodes |> Enum.reject(fn x -> x == pid end)}
-    {:reply, true, new_state}
-  end
+  def handle_call({:terminate_all, algorithm, reason}, _from, state) do
+    # IO.puts ~s"Terminating all other alive processes ... ..."
+    cur_time = System.monotonic_time()
+    case algorithm do
+      :gossip -> 
+        percentage = state.nodes_terminated * 100 / state.total_nodes
+        state.main_pid |> send({:end, [state.startTime, cur_time], {:no_neighbors, percentage}})
 
-  def handle_call(:terminate_all, _from, state) do
-    IO.puts ~s"Terminating all other alive processes ... ..."
-    IO.inspect state.nodes
-    nodes = state.nodes |> Enum.map(fn pid ->
-      compute_time(state.main_pid, pid, state.startTime)
-      # Process.exit(pid, :kill)
-    end)
-    new_state = %{state | nodes: nodes}
-    IO.puts ~s"Terminating main process ... ..."
-    send(state.main_pid, :end)
-    {:reply, true, new_state}
-  end
-
-  defp compute_time(main_pid, pid, start_time) do
-    if Process.alive?(pid) do
-      cur_time = System.monotonic_time()
-      diff = System.convert_time_unit(cur_time - start_time, :native, :millisecond)
-      IO.puts ~s"Time taken to converge #{inspect(pid)} is #{inspect(diff)}."
-      main_pid |> send({:node_time, [pid, diff]})
+      :push_sum -> state.main_pid |> send({:end, [state.startTime, cur_time], reason})
     end
+    {:reply, true, state}
   end
 
 end

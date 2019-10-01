@@ -2,7 +2,7 @@ defmodule Topology do
   require Integer
 
   def create_topology(num_of_nodes, topology, statsPID, module, failure_prob) do
-    IO.puts("Creating topology #{topology} with #{num_of_nodes} nodes and failure_prob = #{failure_prob}")
+    IO.puts("Creating topology")
     nodes = 1..num_of_nodes
     children = nodes
     |> Enum.map(fn i ->
@@ -28,7 +28,6 @@ defmodule Topology do
         end)
       "3dtorus" ->
         arr_3d = get_3d_arr(num_of_nodes)
-        IO.inspect arr_3d
         Enum.each(nodes, fn node ->
           get_neighbors(nodes, node, topology, arr_3d)
           |> get_pids_from_indices(nodes)
@@ -112,7 +111,6 @@ defmodule Topology do
     {_, nodeIndex} = cur_node
     num_of_nodes = Enum.count(nodes)
     n = ceil(:math.pow(num_of_nodes, 1/3))
-    # IO.puts("neighbors node #{nodeIndex} | #{num_of_nodes} | #{n}")
     {i, j, k} = {
       div(nodeIndex-1, (n*n)),
       div(rem(nodeIndex-1, n*n), n),
