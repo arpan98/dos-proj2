@@ -55,30 +55,30 @@ defmodule Stats do
     end
   end
 
-  def handle_cast({:terminate_process, pid}, state) do
+  def handle_call({:terminate_process, pid}, _from, state) do
     compute_time(state.main_pid, pid, state.startTime)
     new_state = %{state | nodes: state.nodes |> Enum.reject(fn x -> x == pid end)}
-    {:noreply, new_state}
+    {:reply, true, new_state}
   end
 
-  def handle_cast(:terminate_all, state) do
-    IO.puts ~s"Terminating all other processes waiting for a message ... ..."
+  def handle_call(:terminate_all, _from, state) do
+    IO.puts ~s"Terminating all other alive processes ... ..."
     IO.inspect state.nodes
     nodes = state.nodes |> Enum.map(fn pid ->
       compute_time(state.main_pid, pid, state.startTime)
+      # Process.exit(pid, :kill)
     end)
     new_state = %{state | nodes: nodes}
     IO.puts ~s"Terminating main process ... ..."
     send(state.main_pid, :end)
-    {:noreply, new_state}
+    {:reply, true, new_state}
   end
 
   defp compute_time(main_pid, pid, start_time) do
     if Process.alive?(pid) do
-      Process.exit(pid, :kill)
       cur_time = System.monotonic_time()
       diff = System.convert_time_unit(cur_time - start_time, :native, :millisecond)
-      IO.puts ~s"#{inspect(pid)} started at #{inspect(start_time)} and terminated at #{inspect(cur_time)}. Total time taken to converge #{inspect(pid)} is #{inspect(diff)}."
+      IO.puts ~s"#{inspect(pid)} started at #{inspect(start_time)} and terminated at #{inspect(cur_time)}. Total time taken to converge #{inspect(pid)} is #{inspect(diff)} milli sseconds."
       main_pid |> send({:node_time, [pid, diff]})
     end
   end
