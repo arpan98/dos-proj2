@@ -1,4 +1,4 @@
-defmodule PushSum.Actor do
+defmodule PushSum.Actor1 do
   use GenServer, restart: :transient
 
   def start_link(argv) do
@@ -25,7 +25,6 @@ defmodule PushSum.Actor do
     # IO.puts ~s"#{inspect(self())} with #{inspect({state[:sum], state[:weight], state[:ratio], state[:round]})} received #{inspect({s, w})}"
     new_state = %{state | sum: sum/2, weight: weight/2, ratio: ratio}
     neighbors = new_state[:neighbors] |> Enum.filter(fn x -> Process.alive?(x) end)
-    IO.puts ~s"#{inspect(self())} neighbors - #{inspect(neighbors)}"
     new_state = cond do
       neighbors == [] ->
         IO.puts ~s"Terminating #{inspect(self())} - empty neighbour list"
@@ -41,10 +40,9 @@ defmodule PushSum.Actor do
         %{new_state | round: round, neighbors: neighbors}
       abs(state[:ratio] - ratio) <= :math.pow(10, -10) and round >= 3 ->
         {neighbors, next_pid} = neighbors |> get_neighbor()
+        send_msg(state.statsPID, next_pid, sum, weight)
         IO.puts ~s"\Terminating #{inspect(self())} - sum estimate converge"
         GenServer.call(state.statsPID, {:terminate_process, self()} )
-        send_msg(state.statsPID, next_pid, sum, weight)
-        Process.exit(self(), :kill)
         %{new_state | round: round, neighbors: neighbors}
     end
     {:noreply, new_state}

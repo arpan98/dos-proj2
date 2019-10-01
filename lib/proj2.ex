@@ -54,8 +54,8 @@ defmodule Proj2 do
         # IO.puts ~s"#{inspect(pid)} - #{inspect(time)}"
         IO.inspect(node_time_list)
         node_time_list ++ [[pid, time]]
-      :end ->
-        IO.puts ~s"#{inspect(node_time_list)}"
+      {:end, diff} ->
+        IO.puts("Convergence time = #{diff} ms. Time step = 10 ms")
         exit(:shutdown)
     end
     |> loop()

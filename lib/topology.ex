@@ -28,6 +28,7 @@ defmodule Topology do
         end)
       "3dtorus" ->
         arr_3d = get_3d_arr(num_of_nodes)
+        IO.inspect arr_3d
         Enum.each(nodes, fn node ->
           get_neighbors(nodes, node, topology, arr_3d)
           |> get_pids_from_indices(nodes)
@@ -110,12 +111,12 @@ defmodule Topology do
   defp get_neighbors(nodes, cur_node, topology, arr) when topology == "3dtorus" do
     {_, nodeIndex} = cur_node
     num_of_nodes = Enum.count(nodes)
-    # IO.puts("neighbors node #{nodeIndex} / #{num_of_nodes}")
     n = ceil(:math.pow(num_of_nodes, 1/3))
+    # IO.puts("neighbors node #{nodeIndex} | #{num_of_nodes} | #{n}")
     {i, j, k} = {
-      div(nodeIndex, (n*n)),
-      div(rem(nodeIndex, n*n), n),
-      rem(nodeIndex, n) - 1
+      div(nodeIndex-1, (n*n)),
+      div(rem(nodeIndex-1, n*n), n),
+      rem(nodeIndex-1, n)
     }
     cond do
       nodeIndex == num_of_nodes ->

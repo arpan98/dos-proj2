@@ -6,17 +6,12 @@ defmodule Stats do
     GenServer.start_link(__MODULE__, arg)
   end
 
-  def printTimeDiff(state) do
-    diff = System.convert_time_unit(state.endTime - state.startTime, :native, :millisecond)
-    IO.puts("Convergence time = #{diff} ms. Time step = 100 ms")
-  end
-
   # Server
   def init(arg) do
     [num_of_nodes, topology, main_pid] = arg
     terminating_percent = case topology do
       "full" -> 80
-      "line" -> 70
+      "line" -> 60
       "rand2d" -> 80
       "3dtorus" -> 80
       "honeycomb" -> 70
@@ -49,12 +44,11 @@ defmodule Stats do
   def handle_cast(:terminateGossip, state) do
     nodes_left = state.nodes_running - 1
     percentage = (state.total_nodes - nodes_left) * 100 / state.total_nodes
-    IO.inspect(percentage)
     if percentage >= state.term_per do
       cur_time = System.monotonic_time()
       new_state = %{state | endTime: cur_time, nodes_running: nodes_left}
-      printTimeDiff(new_state)
-      send(state.main_pid, :end)
+      diff = System.convert_time_unit(cur_time - state.startTime, :native, :millisecond)
+      send(state.main_pid, {:end, diff})
       {:noreply, new_state}      
     else
       new_state = %{state | nodes_running: nodes_left}
@@ -62,27 +56,27 @@ defmodule Stats do
     end
   end
 
-  def handle_cast({:terminate_process, pid}, state) do
+  def handle_call({:terminate_process, pid}, _from, state) do
     compute_time(state.main_pid, pid, state.startTime)
     new_state = %{state | nodes: state.nodes |> Enum.reject(fn x -> x == pid end)}
-    {:noreply, new_state}
+    {:reply, true, new_state}
   end
 
-  def handle_cast(:terminate_all, state) do
-    IO.puts ~s"Terminating all other processes waiting for a message ... ..."
+  def handle_call(:terminate_all, _from, state) do
+    IO.puts ~s"Terminating all other alive processes ... ..."
     IO.inspect state.nodes
     nodes = state.nodes |> Enum.map(fn pid ->
       compute_time(state.main_pid, pid, state.startTime)
+      # Process.exit(pid, :kill)
     end)
     new_state = %{state | nodes: nodes}
     IO.puts ~s"Terminating main process ... ..."
     send(state.main_pid, :end)
-    {:noreply, new_state}
+    {:reply, true, new_state}
   end
 
   defp compute_time(main_pid, pid, start_time) do
     if Process.alive?(pid) do
-      Process.exit(pid, :kill)
       cur_time = System.monotonic_time()
       diff = System.convert_time_unit(cur_time - start_time, :native, :millisecond)
       IO.puts ~s"Time taken to converge #{inspect(pid)} is #{inspect(diff)}."

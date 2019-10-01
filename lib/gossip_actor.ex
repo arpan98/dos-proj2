@@ -2,7 +2,7 @@ defmodule Gossip.Actor do
   use GenServer
 
   @rumorlimit 10
-  @ticktime 100
+  @ticktime 10
 
   # Client
   def start_link(arg) do
@@ -26,7 +26,7 @@ defmodule Gossip.Actor do
       send_gossip(state.neighbors)
       tick()
     end
-    if rumorCount == 10 do
+    if rumorCount == @rumorlimit do
       GenServer.cast(state.statsPID, :terminateGossip)
     end
     {:noreply, new_state}
