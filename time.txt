@@ -1,0 +1,203 @@
+
+Node Count: 100, Topology: "full", Algorithm: "push-sum", Failure Prob: 0
+Creating topology
+Starting Push-Sum algorithm
+Terminating criteria: No more active neighbors
+Running Time: 921 milliseconds.
+Running Time: 1000 milliseconds.
+
+Node Count: 100, Topology: "line", Algorithm: "push-sum", Failure Prob: 0
+Creating topology
+Starting Push-Sum algorithm
+Terminating criteria: No more active neighbors
+Running Time: 218 milliseconds.
+Running Time: 172 milliseconds.
+
+Node Count: 100, Topology: "rand2d", Algorithm: "push-sum", Failure Prob: 0
+Creating topology
+Starting Push-Sum algorithm
+Terminating criteria: No more active neighbors
+Running Time: 31 milliseconds.
+Running Time: 15 milliseconds.
+
+Node Count: 125, Topology: "3dtorus", Algorithm: "push-sum", Failure Prob: 0
+Creating topology
+Starting Push-Sum algorithm
+Terminating criteria: No more active neighbors
+Running Time: 375 milliseconds.
+Running Time: 359 milliseconds.
+
+Node Count: 100, Topology: "honeycomb", Algorithm: "push-sum", Failure Prob: 0
+Creating topology
+Starting Push-Sum algorithm
+Terminating criteria: No more active neighbors
+Running Time: 453 milliseconds.
+Running Time: 469 milliseconds.
+
+Node Count: 100, Topology: "randhoneycomb", Algorithm: "push-sum", Failure Prob: 0
+Creating topology
+Starting Push-Sum algorithm
+Terminating criteria: No more active neighbors
+Running Time: 734 milliseconds.
+Running Time: 750 milliseconds.
+
+Node Count: 250, Topology: "full", Algorithm: "push-sum", Failure Prob: 0
+Creating topology
+Starting Push-Sum algorithm
+Terminating criteria: No more active neighbors
+Running Time: 6109 milliseconds.
+Running Time: 6672 milliseconds.
+
+Node Count: 250, Topology: "line", Algorithm: "push-sum", Failure Prob: 0
+Creating topology
+Starting Push-Sum algorithm
+Terminating criteria: No more active neighbors
+Running Time: 250 milliseconds.
+Running Time: 734 milliseconds.
+
+Node Count: 250, Topology: "rand2d", Algorithm: "push-sum", Failure Prob: 0
+Creating topology
+Starting Push-Sum algorithm
+Terminating criteria: No more active neighbors
+Running Time: 2312 milliseconds.
+Running Time: 1360 milliseconds.
+
+Node Count: 343, Topology: "3dtorus", Algorithm: "push-sum", Failure Prob: 0
+Creating topology
+Starting Push-Sum algorithm
+Terminating criteria: No more active neighbors
+Running Time: 1781 milliseconds.
+Running Time: 1640 milliseconds.
+
+Node Count: 256, Topology: "honeycomb", Algorithm: "push-sum", Failure Prob: 0
+Creating topology
+Starting Push-Sum algorithm
+Terminating criteria: No more active neighbors
+Running Time: 1500 milliseconds.
+Running Time: 1844 milliseconds.
+
+Node Count: 256, Topology: "randhoneycomb", Algorithm: "push-sum", Failure Prob: 0
+Creating topology
+Starting Push-Sum algorithm
+Terminating criteria: No more active neighbors
+Running Time: 2171 milliseconds.
+Running Time: 1438 milliseconds.
+
+Node Count: 500, Topology: "full", Algorithm: "push-sum", Failure Prob: 0
+Creating topology
+Starting Push-Sum algorithm
+Terminating criteria: No more active neighbors
+Running Time: 32609 milliseconds.
+Running Time: 27109 milliseconds.
+
+Node Count: 500, Topology: "line", Algorithm: "push-sum", Failure Prob: 0
+Creating topology
+Starting Push-Sum algorithm
+Terminating criteria: No more active neighbors
+Running Time: 485 milliseconds.
+Running Time: 297 milliseconds.
+
+Node Count: 500, Topology: "rand2d", Algorithm: "push-sum", Failure Prob: 0
+Creating topology
+Starting Push-Sum algorithm
+Terminating criteria: No more active neighbors
+Running Time: 5500 milliseconds.
+Running Time: 1250 milliseconds.
+
+Node Count: 512, Topology: "3dtorus", Algorithm: "push-sum", Failure Prob: 0
+Creating topology
+Starting Push-Sum algorithm
+Terminating criteria: No more active neighbors
+Running Time: 3047 milliseconds.
+Running Time: 3344 milliseconds.
+
+Node Count: 529, Topology: "honeycomb", Algorithm: "push-sum", Failure Prob: 0
+Creating topology
+Starting Push-Sum algorithm
+Terminating criteria: No more active neighbors
+Running Time: 4953 milliseconds.
+Running Time: 2406 milliseconds.
+
+Node Count: 529, Topology: "randhoneycomb", Algorithm: "push-sum", Failure Prob: 0
+Creating topology
+Starting Push-Sum algorithm
+Terminating criteria: No more active neighbors
+Running Time: 14468 milliseconds.
+Running Time: 5109 milliseconds.
+
+Node Count: 1000, Topology: "full", Algorithm: "push-sum", Failure Prob: 0
+Creating topology
+Starting Push-Sum algorithm
+Terminating criteria: No more active neighbors
+Running Time: 117000 milliseconds.
+Running Time: 125531 milliseconds.
+
+Node Count: 1000, Topology: "line", Algorithm: "push-sum", Failure Prob: 0
+Creating topology
+Starting Push-Sum algorithm
+Terminating criteria: No more active neighbors
+Running Time: 109 milliseconds.
+Running Time: 406 milliseconds.
+
+Node Count: 1000, Topology: "rand2d", Algorithm: "push-sum", Failure Prob: 0
+Creating topology
+Starting Push-Sum algorithm
+Terminating criteria: No more active neighbors
+Running Time: 5734 milliseconds.
+Running Time: 11032 milliseconds.
+
+Node Count: 1000, Topology: "3dtorus", Algorithm: "push-sum", Failure Prob: 0
+Creating topology
+Starting Push-Sum algorithm
+Terminating criteria: No more active neighbors
+Running Time: 8141 milliseconds.
+Running Time: 8563 milliseconds.
+
+Node Count: 1024, Topology: "honeycomb", Algorithm: "push-sum", Failure Prob: 0
+Creating topology
+Starting Push-Sum algorithm
+Terminating criteria: No more active neighbors
+Running Time: 2891 milliseconds.
+Running Time: 3969 milliseconds.
+
+Node Count: 1024, Topology: "randhoneycomb", Algorithm: "push-sum", Failure Prob: 0
+Creating topology
+Starting Push-Sum algorithm
+Terminating criteria: No more active neighbors
+Running Time: 7204 milliseconds.
+Running Time: 16969 milliseconds.
+
+Node Count: 2000, Topology: "line", Algorithm: "push-sum", Failure Prob: 0
+Creating topology
+Starting Push-Sum algorithm
+Terminating criteria: No more active neighbors
+Running Time: 656 milliseconds.
+Running Time: 328 milliseconds.
+
+Node Count: 2000, Topology: "rand2d", Algorithm: "push-sum", Failure Prob: 0
+Creating topology
+Starting Push-Sum algorithm
+Terminating criteria: No more active neighbors
+Running Time: 76937 milliseconds.
+Running Time: 49735 milliseconds.
+
+Node Count: 2197, Topology: "3dtorus", Algorithm: "push-sum", Failure Prob: 0
+Creating topology
+Starting Push-Sum algorithm
+Terminating criteria: No more active neighbors
+Running Time: 33922 milliseconds.
+Running Time: 31844 milliseconds.
+
+Node Count: 2025, Topology: "honeycomb", Algorithm: "push-sum", Failure Prob: 0
+Creating topology
+Starting Push-Sum algorithm
+Terminating criteria: No more active neighbors
+Running Time: 9859 milliseconds.
+Running Time: 11750 milliseconds.
+
+Node Count: 2025, Topology: "randhoneycomb", Algorithm: "push-sum", Failure Prob: 0
+Creating topology
+Starting Push-Sum algorithm
+Terminating criteria: No more active neighbors
+Running Time: 14281 milliseconds.
+Running Time: 5766 milliseconds.
