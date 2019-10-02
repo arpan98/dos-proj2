@@ -31,7 +31,7 @@ defmodule PushSum.Actor do
   def handle_cast({:push_sum, s, w}, state) do
     {sum, weight, round} = {(state[:sum] + s) / 2, (state[:weight] + w) / 2, state[:round] + 1}
     ratio = sum / weight
-    new_state = %{state | sum: sum/2, weight: weight/2, ratio: ratio}
+    new_state = %{state | sum: sum, weight: weight, ratio: ratio}
     neighbors = new_state[:neighbors]
     new_state = cond do
       neighbors == [] ->
